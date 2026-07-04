@@ -1,19 +1,35 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+  const [password, setPassword] = useState('')
+  const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const supabase = createClient()
+  const router = useRouter()
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${location.origin}/auth/callback` } })
-    setSent(true)
-    setLoading(false)
+    setError('')
+
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({ email, password })
+      if (error) { setError(error.message); setLoading(false); return }
+      // Auto sign in after signup
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) { setError(signInError.message); setLoading(false); return }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) { setError(error.message); setLoading(false); return }
+    }
+
+    router.push('/dashboard')
+    router.refresh()
   }
 
   return (
@@ -26,26 +42,38 @@ export default function LoginPage() {
           <h1 className="text-2xl font-semibold text-gray-900">NetworkBrain</h1>
           <p className="text-sm text-gray-500 mt-1">Your relationship intelligence platform</p>
         </div>
-        {sent ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center shadow-sm">
-            <div className="text-3xl mb-3">📬</div>
-            <h2 className="font-semibold text-gray-900 mb-1">Check your email</h2>
-            <p className="text-sm text-gray-500">We sent a magic link to <strong>{email}</strong></p>
-          </div>
-        ) : (
-          <form onSubmit={handleLogin} className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required
-                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+          <h2 className="font-semibold text-gray-900 mb-5">{isSignUp ? 'Create your account' : 'Sign in'}</h2>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">
+              {error}
             </div>
-            <button type="submit" disabled={loading}
-              className="w-full bg-brand-500 hover:bg-brand-600 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
-              {loading ? 'Sending…' : 'Continue with email'}
-            </button>
-            <p className="text-xs text-gray-400 text-center mt-4">No password needed — we send a magic link</p>
-          </form>
-        )}
+          )}
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required
+              className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required minLength={6}
+              className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+
+          <button type="submit" disabled={loading}
+            className="w-full bg-brand-500 hover:bg-brand-600 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50">
+            {loading ? 'Please wait…' : isSignUp ? 'Create account' : 'Sign in'}
+          </button>
+
+          <button type="button" onClick={() => { setIsSignUp(!isSignUp); setError('') }}
+            className="w-full text-center text-sm text-gray-500 hover:text-gray-700 mt-4">
+            {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+          </button>
+        </form>
       </div>
     </div>
   )
