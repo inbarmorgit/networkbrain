@@ -19,12 +19,12 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) { setError(error.message); setLoading(false); return }
     }
-    
+
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
     if (signInError) { setError(signInError.message); setLoading(false); return }
-    
-    // Force hard navigation instead of router.push
-    window.location.href = '/dashboard'
+
+    // Hard reload so middleware picks up the new session cookie
+    window.location.replace('/dashboard')
   }
 
   return (
@@ -57,7 +57,7 @@ export default function LoginPage() {
           <div className="mb-5">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••" required minLength={6}
+              placeholder="min 6 characters" required minLength={6}
               className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
           </div>
 
