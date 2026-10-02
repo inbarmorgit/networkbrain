@@ -31,9 +31,14 @@ export default function ContactsClient({ contacts }: { contacts: any[] }) {
           <h1 className="text-2xl font-semibold text-gray-900">Contacts</h1>
           <p className="text-gray-500 mt-0.5">{contacts.length} contacts</p>
         </div>
-        <Link href="/imports" className="flex items-center gap-2 bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors">
-          + Import
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/contacts/review" className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+            🔀 Review sources
+          </Link>
+          <Link href="/imports" className="flex items-center gap-2 bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors">
+            + Import
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-5">
