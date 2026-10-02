@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { parseCSV, detectSourceType, autoMapHeaders } from '@/lib/utils/csv'
+import { parseVCardFile, VCARD_FIELDS } from '@/lib/utils/vcard'
 
 type Step = 'upload' | 'map' | 'preview' | 'importing' | 'done'
 
@@ -30,7 +31,22 @@ export default function ImportWizard() {
   const [enriching, setEnriching] = useState(false)
 
   async function handleFile(file: File) {
-    if (!file.name.endsWith('.csv')) { setError('Please upload a CSV file'); return }
+    const name = file.name.toLowerCase()
+    if (name.endsWith('.vcf')) {
+      const contacts = await parseVCardFile(file)
+      if (contacts.length === 0) { setError('No contacts found in that vCard file'); return }
+      // vCard field names are standardized (unlike CSV headers), so there's
+      // nothing for the user to map — go straight to preview with an
+      // identity mapping so the existing mapping-driven preview/import code
+      // works unchanged for both formats.
+      const identityMapping = Object.fromEntries(VCARD_FIELDS.map(f => [f, f]))
+      setHeaders([...VCARD_FIELDS]); setRows(contacts)
+      setMapping(identityMapping)
+      setSourceType('phone')
+      setError(''); setStep('preview')
+      return
+    }
+    if (!name.endsWith('.csv')) { setError('Please upload a CSV or vCard (.vcf) file'); return }
     const { headers, rows } = await parseCSV(file)
     setHeaders(headers); setRows(rows)
     setSourceType(detectSourceType(headers))
@@ -77,9 +93,9 @@ export default function ImportWizard() {
           onClick={()=>document.getElementById('csv-input')?.click()}
           className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${dragging?'border-brand-400 bg-brand-50':'border-gray-300 hover:border-gray-400'}`}>
           <div className="text-4xl mb-3">📄</div>
-          <h3 className="font-medium text-gray-900 mb-1">Drop your LinkedIn CSV here</h3>
-          <p className="text-sm text-gray-400 mb-4">Or click to browse — upload Connections.csv from LinkedIn</p>
-          <input id="csv-input" type="file" accept=".csv" className="hidden" onChange={e=>{const f=e.target.files?.[0];if(f)handleFile(f)}} />
+          <h3 className="font-medium text-gray-900 mb-1">Drop your CSV or vCard here</h3>
+          <p className="text-sm text-gray-400 mb-4">Connections.csv from LinkedIn, or a .vcf export from iCloud/Google Contacts</p>
+          <input id="csv-input" type="file" accept=".csv,.vcf" className="hidden" onChange={e=>{const f=e.target.files?.[0];if(f)handleFile(f)}} />
         </div>
       )}
 
