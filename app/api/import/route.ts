@@ -22,15 +22,12 @@ export async function POST(req: NextRequest) {
       if (field && row[csvH]) mapped[field] = row[csvH]
     }
     // Accept phone-only rows (e.g. phone exports with no name/email on some
-    // entries) in addition to the existing name/email requirement.
+    // entries) in addition to the existing name/email requirement. The
+    // phone-as-display-name fallback itself lives in the full_name
+    // generated column (0002_phone_display_name_fix.sql), not here —
+    // writing it into first_name directly made it "stick" through merges
+    // and block a real name from ever filling in later.
     if (!mapped.first_name && !mapped.last_name && !mapped.email && !mapped.phone) { skipped++; continue }
-
-    // No name at all: fall back to the phone number as the display name.
-    // Safe for merges too — import_upsert_contact() only fills empty
-    // fields, so a real name already on the matched contact wins.
-    if (!mapped.first_name && !mapped.last_name && mapped.phone) {
-      mapped.first_name = mapped.phone
-    }
 
     let companyId: string | null = null
     if (mapped.company_name) {
