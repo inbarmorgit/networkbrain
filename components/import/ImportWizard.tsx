@@ -25,7 +25,7 @@ export default function ImportWizard() {
   const [mapping, setMapping] = useState<Record<string,string>>({})
   const [sourceType, setSourceType] = useState('unknown')
   const [dragging, setDragging] = useState(false)
-  const [result, setResult] = useState<{imported:number;skipped:number}|null>(null)
+  const [result, setResult] = useState<{imported:number;inserted:number;merged:number;skipped:number}|null>(null)
   const [error, setError] = useState('')
   const [enriching, setEnriching] = useState(false)
 
@@ -48,7 +48,7 @@ export default function ImportWizard() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Import failed')
-      setResult({ imported: data.imported, skipped: data.skipped })
+      setResult({ imported: data.imported, inserted: data.inserted, merged: data.merged, skipped: data.skipped })
       setStep('done')
       setEnriching(true)
       fetch('/api/enrich', { method: 'POST' }).finally(() => setEnriching(false))
@@ -156,7 +156,9 @@ export default function ImportWizard() {
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <div className="text-4xl mb-3">✅</div>
           <h3 className="font-semibold text-gray-900 text-lg mb-1">Import complete!</h3>
-          <p className="text-gray-500 mb-1">{result.imported} contacts imported · {result.skipped} skipped</p>
+          <p className="text-gray-500 mb-1">
+            {result.inserted} new · {result.merged} merged into existing contacts · {result.skipped} skipped
+          </p>
           {enriching && <p className="text-sm text-brand-600 mt-2">🤖 AI is enriching your contacts in the background…</p>}
           <div className="flex gap-3 justify-center mt-5">
             <a href="/contacts" className="px-5 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors">View contacts →</a>
